@@ -37,6 +37,8 @@ export default function TileSelector({ tileset, tileSize, onSelect }) {
           padding: "10px",
           background: "#eee",
           maxWidth: "400px",
+          maxHeight: "800px",
+            overflow: "auto",
         }}
       >
         {tiles.map((tile, index) => (
