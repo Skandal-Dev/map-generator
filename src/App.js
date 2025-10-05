@@ -1,25 +1,24 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import TileSelector from "./components/TileSelector";
+import MapGrid from "./components/MapGrid";
+import tileset from "./tileset.jpg"; // ⚠️ ajoute ton tileset ici
 
-function App() {
+export default function App() {
+  const [selectedTile, setSelectedTile] = useState(null);
+  const [mapData, setMapData] = useState(
+    Array(10).fill(null).map(() => Array(10).fill(null)) // map vide 10x10
+  );
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{ display: "flex" }}>
+      <TileSelector tileset={tileset} tileSize={32} onSelect={setSelectedTile} />
+      <MapGrid
+        mapData={mapData}
+        setMapData={setMapData}
+        selectedTile={selectedTile}
+        tileset={tileset}
+        tileSize={32}
+      />
     </div>
   );
 }
-
-export default App;
