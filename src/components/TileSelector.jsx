@@ -1,59 +1,40 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 
-export default function TileSelector({ tileset, tileSize, onSelect }) {
-  const [tiles, setTiles] = useState([]);
-  const [selected, setSelected] = useState(null);
+export default function TileSelector({ tileset, tileSize, selectedTile, setSelectedTile }) {
+  const columns = 8; // nombre de colonnes dans le tileset
+  const rows = 8; // nombre de lignes dans le tileset
 
-  useEffect(() => {
-    const img = new Image();
-    img.src = tileset;
-    img.onload = () => {
-      const cols = Math.floor(img.width / tileSize);
-      const rows = Math.floor(img.height / tileSize);
-      const newTiles = [];
-      for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-          newTiles.push({ x, y });
-        }
-      }
-      setTiles(newTiles);
-    };
-  }, [tileset, tileSize]);
-
-  const handleSelect = (tile) => {
-    setSelected(tile);
-    onSelect(tile);
-  };
+  const tiles = [];
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < columns; x++) {
+      tiles.push({ x, y, tileset });
+    }
+  }
 
   return (
-    <div style={{ marginRight: 20 }}>
+    <div>
       <h3>Tileset</h3>
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: `repeat(auto-fill, ${tileSize + 10}px)`,
-          gap: "10px",
-          border: "1px solid #aaa",
-          padding: "10px",
-          background: "#eee",
-          maxWidth: "400px",
-          maxHeight: "800px",
-            overflow: "auto",
+          gridTemplateColumns: `repeat(${columns}, ${tileSize}px)`,
+          gridGap: "2px",
+          border: "1px solid #888",
+          padding: "5px",
         }}
       >
-        {tiles.map((tile, index) => (
+        {tiles.map((tile, idx) => (
           <div
-            key={index}
-            onClick={() => handleSelect(tile)}
+            key={idx}
             style={{
               width: tileSize,
               height: tileSize,
               backgroundImage: `url(${tileset})`,
               backgroundPosition: `-${tile.x * tileSize}px -${tile.y * tileSize}px`,
-              backgroundSize: "auto",
-              border: selected === tile ? "2px solid red" : "1px solid #444",
+              border: tile === selectedTile ? "2px solid red" : "1px solid #ccc",
               cursor: "pointer",
             }}
+            onMouseDown={() => setSelectedTile(tile)}
           />
         ))}
       </div>

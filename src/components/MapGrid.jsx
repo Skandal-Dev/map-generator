@@ -1,100 +1,98 @@
-import React, { useRef, useEffect, useState } from "react";
+// MapGrid.jsx
+import React, { useState } from "react";
 
-export default function MapGrid({ mapData, setMapData, selectedTile, tileset, tileSize }) {
-  const canvasRef = useRef(null);
+export default function MapGrid({ mapData, setMapData, selectedTile, tileSize }) {
   const [isPainting, setIsPainting] = useState(false);
-  const [rows, setRows] = useState(mapData.length);
-  const [cols, setCols] = useState(mapData[0].length);
+  const [rows, setRows] = useState(mapData?.height || 10);
+  const [cols, setCols] = useState(mapData?.width || 10);
+  const [collisionMode, setCollisionMode] = useState(false);
 
-  // === Dessin du canvas ===
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-    img.src = tileset;
+  if (!mapData.layers) mapData.layers = [];
+  if (!mapData.collision) {
+    // initialize collision layer if undefined
+    mapData.collision = Array.from({ length: mapData.height }, () =>
+      Array.from({ length: mapData.width }, () => 0)
+    );
+  }
 
-    img.onload = () => {
-      canvas.width = mapData[0].length * tileSize;
-      canvas.height = mapData.length * tileSize;
+  const handlePaintTile = (rowIdx, colIdx) => {
+    if (!selectedTile || mapData.layers.length === 0) return;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Dessiner la map
-      mapData.forEach((row, y) => {
-        row.forEach((cell, x) => {
-          if (cell) {
-            ctx.drawImage(
-              img,
-              cell.x * tileSize, // coord X dans tileset
-              cell.y * tileSize, // coord Y dans tileset
-              tileSize,
-              tileSize,
-              x * tileSize,
-              y * tileSize,
-              tileSize,
-              tileSize
-            );
-          } else {
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
-            ctx.strokeStyle = "#ddd";
-            ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
-          }
-        });
-      });
-    };
-  }, [mapData, tileset, tileSize]);
-
-  // === Fonction peinture ===
-  const paintTile = (e) => {
-    if (!selectedTile) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / tileSize);
-    const y = Math.floor((e.clientY - rect.top) / tileSize);
-
-    if (y < 0 || y >= mapData.length || x < 0 || x >= mapData[0].length) return;
-
-    setMapData((prev) =>
-      prev.map((row, rowIdx) =>
-        row.map((cell, colIdx) =>
-          rowIdx === y && colIdx === x ? selectedTile : cell
+    const newLayers = mapData.layers.map((layer, i) => {
+      if (i !== mapData.activeLayer) return layer;
+      const newData = layer.data.map((row, r) =>
+        row.map((cell, c) =>
+          r === rowIdx && c === colIdx ? { ...selectedTile } : cell
         )
+      );
+      return { ...layer, data: newData };
+    });
+
+    setMapData({ ...mapData, layers: newLayers });
+  };
+
+  const handlePaintCollision = (rowIdx, colIdx) => {
+    const newCollision = mapData.collision.map((row, r) =>
+      row.map((cell, c) =>
+        r === rowIdx && c === colIdx ? (cell === 0 ? 1 : 0) : cell
       )
     );
+    setMapData({ ...mapData, collision: newCollision });
   };
 
-  // === Events souris ===
-  const handleMouseDown = (e) => {
-    setIsPainting(true);
-    paintTile(e);
+  const handleCellPaint = (rowIdx, colIdx) => {
+    if (collisionMode) handlePaintCollision(rowIdx, colIdx);
+    else handlePaintTile(rowIdx, colIdx);
   };
 
-  const handleMouseMove = (e) => {
-    if (isPainting) {
-      paintTile(e);
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsPainting(false);
-  };
-
-  // === Génération nouvelle grille ===
   const generateGrid = () => {
-    const newMap = Array.from({ length: rows }, () =>
-      Array.from({ length: cols }, () => null)
+    const newLayers = [
+      {
+        name: "Layer 1",
+        data: Array.from({ length: rows }, () =>
+          Array.from({ length: cols }, () => null)
+        ),
+      },
+    ];
+    const newCollision = Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => 0)
     );
-    setMapData(newMap);
+    setMapData({
+      width: cols,
+      height: rows,
+      layers: newLayers,
+      activeLayer: 0,
+      collision: newCollision,
+    });
+  };
+
+  const addLayer = () => {
+    const newLayer = {
+      name: `Layer ${mapData.layers.length + 1}`,
+      data: Array.from({ length: mapData.height }, () =>
+        Array.from({ length: mapData.width }, () => null)
+      ),
+    };
+    setMapData({ ...mapData, layers: [...mapData.layers, newLayer] });
+  };
+
+  const exportJSON = () => {
+    const dataStr = JSON.stringify(mapData, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "map.json";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
     <div>
-      <h3>Grille</h3>
-
-      {/* Formulaire de génération */}
+      {/* Contrôles */}
       <div style={{ marginBottom: "10px" }}>
         <label>
-          Lignes :{" "}
+          Lignes:{" "}
           <input
             type="number"
             value={rows}
@@ -103,7 +101,7 @@ export default function MapGrid({ mapData, setMapData, selectedTile, tileset, ti
           />
         </label>
         <label style={{ marginLeft: "10px" }}>
-          Colonnes :{" "}
+          Colonnes:{" "}
           <input
             type="number"
             value={cols}
@@ -114,16 +112,104 @@ export default function MapGrid({ mapData, setMapData, selectedTile, tileset, ti
         <button onClick={generateGrid} style={{ marginLeft: "10px" }}>
           Générer
         </button>
+        <button onClick={addLayer} style={{ marginLeft: "10px" }}>
+          Ajouter Layer
+        </button>
+        <button onClick={exportJSON} style={{ marginLeft: "10px" }}>
+          Export JSON
+        </button>
+        <button
+          onClick={() => setCollisionMode(!collisionMode)}
+          style={{ marginLeft: "10px" }}
+        >
+          Mode Collisions: {collisionMode ? "ON" : "OFF"}
+        </button>
       </div>
 
-      <canvas
-        ref={canvasRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        style={{ border: "1px solid black", cursor: "crosshair" }}
-      />
+      {/* Sélecteur de layer */}
+      <div style={{ marginBottom: "10px" }}>
+        {mapData.layers.map((layer, i) => (
+          <button
+            key={i}
+            style={{
+              marginRight: "5px",
+              fontWeight: i === mapData.activeLayer ? "bold" : "normal",
+            }}
+            onClick={() => setMapData({ ...mapData, activeLayer: i })}
+          >
+            {layer.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Grille */}
+      <div
+        style={{
+          position: "relative",
+          width: mapData.width * tileSize,
+          height: mapData.height * tileSize,
+        }}
+        onMouseUp={() => setIsPainting(false)}
+      >
+        {/* Tiles */}
+        {mapData.layers.map((layer, layerIdx) =>
+          layer.data.map((row, r) =>
+            row.map((cell, c) => (
+              <div
+                key={`tile-${layerIdx}-${r}-${c}`}
+                style={{
+                  width: tileSize,
+                  height: tileSize,
+                  boxSizing: "border-box",
+                  border: "1px solid #ddd",
+                  backgroundImage: cell
+                    ? `url(${cell.tileset})`
+                    : "none",
+                  backgroundPosition: cell
+                    ? `-${cell.x * tileSize}px -${cell.y * tileSize}px`
+                    : "none",
+                  position: "absolute",
+                  top: r * tileSize,
+                  left: c * tileSize,
+                  zIndex: layerIdx,
+                  pointerEvents: layerIdx === mapData.activeLayer && !collisionMode ? "auto" : "none",
+                }}
+                onMouseDown={() => {
+                  setIsPainting(true);
+                  handleCellPaint(r, c);
+                }}
+                onMouseEnter={() => isPainting && handleCellPaint(r, c)}
+              />
+            ))
+          )
+        )}
+
+        {/* Collisions overlay */}
+        {collisionMode &&
+          mapData.collision.map((row, r) =>
+            row.map((cell, c) => (
+              <div
+                key={`col-${r}-${c}`}
+                style={{
+                  width: tileSize,
+                  height: tileSize,
+                  position: "absolute",
+                  top: r * tileSize,
+                  left: c * tileSize,
+                  backgroundColor: cell ? "rgba(255,0,0,0.5)" : "transparent",
+                  border: "1px solid rgba(255,0,0,0.2)",
+                  zIndex: mapData.layers.length + 1,
+                  cursor: "crosshair",
+                }}
+                onMouseDown={() => {
+                  setIsPainting(true);
+                  handleCellPaint(r, c);
+                }}
+                onMouseEnter={() => isPainting && handleCellPaint(r, c)}
+              />
+            ))
+          )}
+      </div>
     </div>
   );
 }

@@ -1,23 +1,34 @@
 import React, { useState } from "react";
-import TileSelector from "./components/TileSelector";
 import MapGrid from "./components/MapGrid";
-import tileset from "./tileset.jpg"; // ⚠️ ajoute ton tileset ici
+import TileSelector from "./components/TileSelector";
+import tileset from "./tileset.jpg"; // ton tileset
 
 export default function App() {
+  const tileSize = 32;
+
+  // mapData: width, height, layers[], activeLayer
+  const [mapData, setMapData] = useState({
+    width: 10,
+    height: 10,
+    layers: [],
+    activeLayer: 0,
+  });
+
   const [selectedTile, setSelectedTile] = useState(null);
-  const [mapData, setMapData] = useState(
-    Array(10).fill(null).map(() => Array(10).fill(null)) // map vide 10x10
-  );
 
   return (
-    <div style={{ display: "flex" }}>
-      <TileSelector tileset={tileset} tileSize={32} onSelect={setSelectedTile} />
+    <div style={{ display: "flex", gap: "20px", padding: "20px" }}>
+      <TileSelector
+        tileset={tileset}
+        tileSize={tileSize}
+        selectedTile={selectedTile}
+        setSelectedTile={setSelectedTile}
+      />
       <MapGrid
         mapData={mapData}
         setMapData={setMapData}
         selectedTile={selectedTile}
-        tileset={tileset}
-        tileSize={32}
+        tileSize={tileSize}
       />
     </div>
   );
