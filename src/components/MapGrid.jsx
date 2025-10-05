@@ -1,8 +1,12 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 
 export default function MapGrid({ mapData, setMapData, selectedTile, tileset, tileSize }) {
   const canvasRef = useRef(null);
+  const [isPainting, setIsPainting] = useState(false);
+  const [rows, setRows] = useState(mapData.length);
+  const [cols, setCols] = useState(mapData[0].length);
 
+  // === Dessin du canvas ===
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -21,8 +25,8 @@ export default function MapGrid({ mapData, setMapData, selectedTile, tileset, ti
           if (cell) {
             ctx.drawImage(
               img,
-              cell.x * tileSize, // tuile X
-              cell.y * tileSize, // tuile Y
+              cell.x * tileSize, // coord X dans tileset
+              cell.y * tileSize, // coord Y dans tileset
               tileSize,
               tileSize,
               x * tileSize,
@@ -41,27 +45,83 @@ export default function MapGrid({ mapData, setMapData, selectedTile, tileset, ti
     };
   }, [mapData, tileset, tileSize]);
 
-  const handleClick = (e) => {
+  // === Fonction peinture ===
+  const paintTile = (e) => {
     if (!selectedTile) return;
-
     const rect = canvasRef.current.getBoundingClientRect();
     const x = Math.floor((e.clientX - rect.left) / tileSize);
     const y = Math.floor((e.clientY - rect.top) / tileSize);
 
-    const newData = mapData.map((row, rowIdx) =>
-      row.map((cell, colIdx) =>
-        rowIdx === y && colIdx === x ? selectedTile : cell
+    if (y < 0 || y >= mapData.length || x < 0 || x >= mapData[0].length) return;
+
+    setMapData((prev) =>
+      prev.map((row, rowIdx) =>
+        row.map((cell, colIdx) =>
+          rowIdx === y && colIdx === x ? selectedTile : cell
+        )
       )
     );
-    setMapData(newData);
+  };
+
+  // === Events souris ===
+  const handleMouseDown = (e) => {
+    setIsPainting(true);
+    paintTile(e);
+  };
+
+  const handleMouseMove = (e) => {
+    if (isPainting) {
+      paintTile(e);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsPainting(false);
+  };
+
+  // === Génération nouvelle grille ===
+  const generateGrid = () => {
+    const newMap = Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => null)
+    );
+    setMapData(newMap);
   };
 
   return (
     <div>
       <h3>Grille</h3>
+
+      {/* Formulaire de génération */}
+      <div style={{ marginBottom: "10px" }}>
+        <label>
+          Lignes :{" "}
+          <input
+            type="number"
+            value={rows}
+            min="1"
+            onChange={(e) => setRows(Number(e.target.value))}
+          />
+        </label>
+        <label style={{ marginLeft: "10px" }}>
+          Colonnes :{" "}
+          <input
+            type="number"
+            value={cols}
+            min="1"
+            onChange={(e) => setCols(Number(e.target.value))}
+          />
+        </label>
+        <button onClick={generateGrid} style={{ marginLeft: "10px" }}>
+          Générer
+        </button>
+      </div>
+
       <canvas
         ref={canvasRef}
-        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
         style={{ border: "1px solid black", cursor: "crosshair" }}
       />
     </div>
