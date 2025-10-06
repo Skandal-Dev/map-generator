@@ -1,42 +1,60 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 export default function TileSelector({ tileset, tileSize, selectedTile, setSelectedTile }) {
-  const columns = 8; // nombre de colonnes dans le tileset
-  const rows = 8; // nombre de lignes dans le tileset
+  const [cols, setCols] = useState(8);
+  const [rows, setRows] = useState(8);
 
-  const tiles = [];
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < columns; x++) {
-      tiles.push({ x, y, tileset });
-    }
-  }
+  // Charger l'image pour détecter colonnes / lignes
+  useEffect(() => {
+    const img = new Image();
+    img.src = tileset;
+    img.onload = () => {
+      setCols(Math.floor(img.width / tileSize));
+      setRows(Math.floor(img.height / tileSize));
+    };
+  }, [tileset, tileSize]);
+
+  const handleSelect = (x, y) => {
+    setSelectedTile({ x, y, tileset, cols, rows });
+  };
 
   return (
-    <div>
-      <h3>Tileset</h3>
+    <div
+      style={{
+        border: "1px solid #888",
+        padding: "5px",
+        background: "#f9f9f9",
+        maxHeight: "400px",
+        overflowY: "auto",
+      }}
+    >
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: `repeat(${columns}, ${tileSize}px)`,
-          gridGap: "2px",
-          border: "1px solid #888",
-          padding: "5px",
+          gridTemplateColumns: `repeat(${cols}, ${tileSize}px)`,
+          gap: "2px",
         }}
       >
-        {tiles.map((tile, idx) => (
-          <div
-            key={idx}
-            style={{
-              width: tileSize,
-              height: tileSize,
-              backgroundImage: `url(${tileset})`,
-              backgroundPosition: `-${tile.x * tileSize}px -${tile.y * tileSize}px`,
-              border: tile === selectedTile ? "2px solid red" : "1px solid #ccc",
-              cursor: "pointer",
-            }}
-            onMouseDown={() => setSelectedTile(tile)}
-          />
-        ))}
+        {Array.from({ length: rows }).map((_, y) =>
+          Array.from({ length: cols }).map((_, x) => (
+            <div
+              key={`${x}-${y}`}
+              onMouseDown={() => handleSelect(x, y)}
+              style={{
+                width: tileSize,
+                height: tileSize,
+                backgroundImage: `url(${tileset})`,
+                backgroundSize: `${cols * tileSize}px ${rows * tileSize}px`,
+                backgroundPosition: `-${x * tileSize}px -${y * tileSize}px`,
+                border:
+                  selectedTile && selectedTile.x === x && selectedTile.y === y
+                    ? "2px solid blue"
+                    : "1px solid #ccc",
+                cursor: "pointer",
+              }}
+            />
+          ))
+        )}
       </div>
     </div>
   );
