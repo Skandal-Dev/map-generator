@@ -1,16 +1,21 @@
 import React, { useState } from "react";
 import "./MapGrid.css";
 
-export default function MapGrid({ tileSize, selectedTile, mode, mapData, setMapData }) {
+export default function MapGrid({ tileset, tileSize, selectedTile, selectedEntity, mode, mapData, setMapData }) {
   const [isDrawing, setIsDrawing] = useState(false);
 
+  // === Dessin sur la grille ===
   const handleCellAction = (x, y) => {
-    const newMap = { ...mapData };
+    const newMap = structuredClone(mapData);
 
-    if (mode === "tiles") {
+    if (mode === "tiles" && selectedTile) {
       newMap.layers[newMap.activeLayer][y][x] = selectedTile;
-    } else if (mode === "collisions") {
+    } 
+    else if (mode === "collisions") {
       newMap.collisions[y][x] = newMap.collisions[y][x] === 1 ? 0 : 1;
+    } 
+    else if (mode === "entities" && selectedEntity) {
+      newMap.entityLayer[y][x] = selectedEntity;
     }
 
     setMapData(newMap);
@@ -37,6 +42,7 @@ export default function MapGrid({ tileSize, selectedTile, mode, mapData, setMapD
           }
 
           const collision = mapData.collisions?.[y]?.[x] || 0;
+          const entity = mapData.entityLayer?.[y]?.[x];
 
           return (
             <div
@@ -53,20 +59,19 @@ export default function MapGrid({ tileSize, selectedTile, mode, mapData, setMapD
               style={{
                 width: tileSize,
                 height: tileSize,
-                backgroundImage: tile
-                  ? `url(${tile.tileset})`
-                  : "linear-gradient(45deg, #eee, #ddd)",
+                backgroundImage: tile ? `url(${tile.tileset})` : "linear-gradient(45deg, #eee, #ddd)",
                 backgroundSize: tile
-                  ? `${tile.cols * tileSize}px ${tile.rows * tileSize}px`
-                  : "none",
+                  ? `${tile.imageWidth}px ${tile.imageHeight}px`
+                  : "cover",
                 backgroundPosition: tile
-                  ? `-${tile.x * tileSize}px -${tile.y * tileSize}px`
+                  ? `-${tile.x * tile.tileSize}px -${tile.y * tile.tileSize}px`
                   : "none",
                 border: "1px solid #ccc",
                 position: "relative",
                 userSelect: "none",
               }}
             >
+              {/* Collision overlay */}
               {collision === 1 && (
                 <div
                   style={{
@@ -79,10 +84,26 @@ export default function MapGrid({ tileSize, selectedTile, mode, mapData, setMapD
                     fontSize: "12px",
                     color: "white",
                     fontWeight: "bold",
+                    zIndex: 5,
                   }}
                 >
                   X
                 </div>
+              )}
+
+              {/* Entity overlay */}
+              {entity && (
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    backgroundImage: `url(${entity.entitySpritesheet})`,
+                    backgroundSize: `${entity.cols * tileSize}px ${entity.rows * tileSize}px`,
+                    backgroundPosition: `-${entity.x * tileSize}px -${entity.y * tileSize}px`,
+                    pointerEvents: "none",
+                    zIndex: 10,
+                  }}
+                />
               )}
             </div>
           );

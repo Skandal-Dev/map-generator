@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import MapGrid from "./components/MapGrid";
 import TileSelector from "./components/TileSelector";
-import tileset from "./tileset.jpg";
+import EntitySelector from "./components/EntitySelector";
+import defaultTileset from "./tileset.jpg";
+import defaultEntities from "./tileset.jpg"; // ton spritesheet par défaut
 
 export default function App() {
   const tileSize = 32;
@@ -12,15 +14,37 @@ export default function App() {
     layers: [
       Array(10).fill(null).map(() => Array(10).fill(null)), // première layer
     ],
+    entityLayer: Array(10).fill(null).map(() => Array(10).fill(null)), // couche entités
     collisions: Array(10).fill(null).map(() => Array(10).fill(0)),
     activeLayer: 0,
   });
 
   const [selectedTile, setSelectedTile] = useState(null);
-  const [mode, setMode] = useState("tiles"); // "tiles" ou "collisions"
+  const [selectedEntity, setSelectedEntity] = useState(null);
+  const [mode, setMode] = useState("tiles"); // "tiles", "collisions", "entities"
 
   const [width, setWidth] = useState(10);
   const [height, setHeight] = useState(10);
+  const [tileset, setTileset] = useState(defaultTileset);
+  const [entitySpritesheet, setEntitySpritesheet] = useState(defaultEntities);
+
+  // === Upload tileset ===
+  const handleTilesetChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setTileset(url);
+    }
+  };
+
+  // === Upload spritesheet entités ===
+  const handleEntitiesChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setEntitySpritesheet(url);
+    }
+  };
 
   // === Générer une nouvelle map ===
   const handleResize = () => {
@@ -30,6 +54,7 @@ export default function App() {
       layers: [
         Array(height).fill(null).map(() => Array(width).fill(null)),
       ],
+      entityLayer: Array(height).fill(null).map(() => Array(width).fill(null)),
       collisions: Array(height).fill(null).map(() => Array(width).fill(0)),
       activeLayer: 0,
     };
@@ -67,7 +92,6 @@ export default function App() {
         height: "100vh",
         fontFamily: "sans-serif",
         background: "#d9d9d9",
-        
       }}
     >
       {/* Toolbar */}
@@ -79,17 +103,32 @@ export default function App() {
           borderBottom: "1px solid #aaa",
           padding: "20px",
           gap: "10px",
-
           margin: "10px",
-            borderRadius: "5px",
+          borderRadius: "5px",
         }}
       >
         <button onClick={() => setMode("tiles")}>🎨 Tiles</button>
         <button onClick={() => setMode("collisions")}>🚧 Collisions</button>
+        <button onClick={() => setMode("entities")}>👤 Entités</button>
         <button onClick={addLayer}>➕ Layer</button>
         <button onClick={exportJSON}>💾 Export</button>
 
-        {/* Dimensions inline dans la barre */}
+        {/* Upload tileset */}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleTilesetChange}
+          style={{ marginLeft: "20px" }}
+        />
+        {/* Upload entities */}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleEntitiesChange}
+          style={{ marginLeft: "10px" }}
+        />
+
+        {/* Dimensions inline */}
         <label style={{ marginLeft: "20px" }}>
           Largeur:
           <input
@@ -122,8 +161,9 @@ export default function App() {
             borderRight: "1px solid #aaa",
             padding: "10px",
             overflowY: "auto",
-             margin: "10px",
+            margin: "10px",
             borderRadius: "5px",
+            width: "400px",
           }}
         >
           <h3>Tileset</h3>
@@ -132,6 +172,13 @@ export default function App() {
             tileSize={tileSize}
             selectedTile={selectedTile}
             setSelectedTile={setSelectedTile}
+          />
+          <h3 style={{ marginTop: "20px" }}>Entités / Décors</h3>
+          <EntitySelector
+            entitySpritesheet={entitySpritesheet}
+            tileSize={tileSize}
+            selectedEntity={selectedEntity}
+            setSelectedEntity={setSelectedEntity}
           />
         </div>
 
@@ -145,12 +192,15 @@ export default function App() {
             border: "1px solid #aaa",
             margin: "10px",
             borderRadius: "5px",
+            width: "936px",
+            marginLeft: "240px",
           }}
         >
           <MapGrid
             mapData={mapData}
             setMapData={setMapData}
             selectedTile={selectedTile}
+            selectedEntity={selectedEntity}
             tileSize={tileSize}
             tileset={tileset}
             mode={mode}

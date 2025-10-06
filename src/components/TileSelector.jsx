@@ -1,22 +1,39 @@
 import React, { useEffect, useState } from "react";
 
 export default function TileSelector({ tileset, tileSize, selectedTile, setSelectedTile }) {
-  const [cols, setCols] = useState(8);
-  const [rows, setRows] = useState(8);
+  const [cols, setCols] = useState(1);
+  const [rows, setRows] = useState(1);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageDims, setImageDims] = useState({ width: 0, height: 0 });
 
-  // Charger l'image pour détecter colonnes / lignes
   useEffect(() => {
+    if (!tileset) return;
     const img = new Image();
     img.src = tileset;
     img.onload = () => {
-      setCols(Math.floor(img.width / tileSize));
-      setRows(Math.floor(img.height / tileSize));
+      const colsCount = Math.floor(img.width / tileSize);
+      const rowsCount = Math.floor(img.height / tileSize);
+      setCols(colsCount);
+      setRows(rowsCount);
+      setImageDims({ width: img.width, height: img.height });
+      setImageLoaded(true);
     };
   }, [tileset, tileSize]);
 
   const handleSelect = (x, y) => {
-    setSelectedTile({ x, y, tileset, cols, rows });
+    setSelectedTile({
+      x,
+      y,
+      tileSize,
+      tileset,
+      imageWidth: imageDims.width,
+      imageHeight: imageDims.height,
+    });
   };
+
+  if (!imageLoaded) {
+    return <div>Chargement du tileset...</div>;
+  }
 
   return (
     <div
@@ -26,14 +43,13 @@ export default function TileSelector({ tileset, tileSize, selectedTile, setSelec
         background: "#f9f9f9",
         maxHeight: "400px",
         overflowY: "auto",
-       
       }}
     >
       <div
         style={{
           display: "grid",
           gridTemplateColumns: `repeat(${cols}, ${tileSize}px)`,
-          gap: "2px",
+          gap: "1px",
         }}
       >
         {Array.from({ length: rows }).map((_, y) =>
@@ -45,7 +61,7 @@ export default function TileSelector({ tileset, tileSize, selectedTile, setSelec
                 width: tileSize,
                 height: tileSize,
                 backgroundImage: `url(${tileset})`,
-                backgroundSize: `${cols * tileSize}px ${rows * tileSize}px`,
+                backgroundSize: `${imageDims.width}px ${imageDims.height}px`,
                 backgroundPosition: `-${x * tileSize}px -${y * tileSize}px`,
                 border:
                   selectedTile && selectedTile.x === x && selectedTile.y === y
