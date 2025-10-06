@@ -67,6 +67,7 @@ export default function App() {
         height: "100vh",
         fontFamily: "sans-serif",
         background: "#d9d9d9",
+        
       }}
     >
       {/* Toolbar */}
@@ -76,8 +77,11 @@ export default function App() {
           alignItems: "center",
           background: "#ececec",
           borderBottom: "1px solid #aaa",
-          padding: "0 10px",
+          padding: "20px",
           gap: "10px",
+
+          margin: "10px",
+            borderRadius: "5px",
         }}
       >
         <button onClick={() => setMode("tiles")}>🎨 Tiles</button>
@@ -118,6 +122,8 @@ export default function App() {
             borderRight: "1px solid #aaa",
             padding: "10px",
             overflowY: "auto",
+             margin: "10px",
+            borderRadius: "5px",
           }}
         >
           <h3>Tileset</h3>
@@ -137,6 +143,8 @@ export default function App() {
             alignItems: "center",
             justifyContent: "center",
             border: "1px solid #aaa",
+            margin: "10px",
+            borderRadius: "5px",
           }}
         >
           <MapGrid
@@ -155,6 +163,8 @@ export default function App() {
             background: "#f5f5f5",
             borderLeft: "1px solid #aaa",
             padding: "10px",
+            margin: "10px",
+            borderRadius: "5px",
           }}
         >
           <h3>Propriétés</h3>

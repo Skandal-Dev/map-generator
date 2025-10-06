@@ -26,6 +26,7 @@ export default function TileSelector({ tileset, tileSize, selectedTile, setSelec
         background: "#f9f9f9",
         maxHeight: "400px",
         overflowY: "auto",
+       
       }}
     >
       <div
